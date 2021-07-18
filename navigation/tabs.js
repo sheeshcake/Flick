@@ -1,7 +1,7 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 
-import { Home } from "../screens"
+import { Home, Search } from "../screens"
 import { COLORS, icons } from "../constants"
 
 import { TabIcon } from "../components"
@@ -21,7 +21,7 @@ const Tabs = () => {
                     elevation: 0,
                     backgroundColor: COLORS.black,
                     borderTopColor: "transparent",
-                    height: 100
+                    height: 50
                 }
             }}
         >
@@ -51,7 +51,7 @@ const Tabs = () => {
             /> */}
             <Tab.Screen
                 name="Search"
-                component={Home}
+                component={Search}
                 options={{
                     tabBarIcon: ({ focused }) => (
                         <TabIcon

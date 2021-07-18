@@ -10,6 +10,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.15.5",
     "@react-native-community/masked-view": "^0.1.10",
     "@react-navigation/bottom-tabs": "^5.11.8",
     "@react-navigation/native": "^5.9.3",
@@ -20,7 +21,8 @@
     "react-native-linear-gradient": "^2.5.6",
     "react-native-reanimated": "^2.0.0",
     "react-native-safe-area-context": "^3.2.0",
-    "react-native-screens": "^2.18.1"
+    "react-native-screens": "^2.18.1",
+    "react-native-torrent-streamer": "^0.2.3"
   },
   "devDependencies": {
     "@babel/core": "7.13.10",

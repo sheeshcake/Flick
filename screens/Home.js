@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState} from 'react';
 import {
     SafeAreaView,
     View,
@@ -12,9 +12,30 @@ import {
     ScrollView
 } from 'react-native';
 import { dummyData, COLORS, FONTS, SIZES, icons, images } from '../constants'
-import { newSeason } from '../constants/dummy';
 
 const Home = ({ navigation }) => {
+
+    useEffect(() => {
+        getData()
+    }, [])
+
+    async function getData() {
+        await fetch('https://yts.mx/api/v2/list_movies.json?with_rt_ratings=true&limit=5&sort_by=date_added')
+            .then(response => response.json() )
+            .then(data => {
+                setNewMovies(data.data.movies)
+            })
+            .catch(error => console.log(error));
+        await fetch('https://yts.mx/api/v2/list_movies.json?with_rt_ratings=true')
+            .then(response => response.json() )
+            .then(data => {
+                setMovies(data.data.movies)
+            })
+            .catch(error => console.log(error));
+    }
+
+    const [movies, setMovies] = useState([])
+    const [newmovies, setNewMovies] = useState([])
 
     const newSeasonScrollX = React.useRef(new Animated.Value(0)).current;
 
@@ -82,7 +103,7 @@ const Home = ({ navigation }) => {
                 contentContainerStyle={{
                     marginTop: SIZES.radius
                 }}
-                data={dummyData.newSeason}
+                data={newmovies}
                 onScroll={Animated.event([
                     { nativeEvent: { contentOffset: { x: newSeasonScrollX} } }
                 ], { useNativeDriver: false })}
@@ -99,7 +120,7 @@ const Home = ({ navigation }) => {
                                 }}
                             >
                                 <ImageBackground
-                                    source={item.thumbnail}
+                                    source={{uri: item.large_cover_image}}
                                     resizeMode="cover"
                                     style={{
                                         width: SIZES.width * 0.85,
@@ -155,6 +176,22 @@ const Home = ({ navigation }) => {
                                                     }}
                                                 >Play Now</Text>
                                         </View>
+                                        <Text
+                                            style={{
+                                                flex: 1,
+                                                flex: 1,
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                flexWrap: 'wrap',
+                                                color: COLORS.white,
+                                                ...FONTS.h2,
+                                                textShadowColor: 'rgba(0, 0, 0, 0.75)',
+                                                textShadowOffset: {width: -1, height: 1},
+                                                textShadowRadius: 10
+                                            }}
+                                        >
+                                            {item.title}
+                                        </Text>
                                     </View>
                                 </ImageBackground>
                             </View>
@@ -180,7 +217,7 @@ const Home = ({ navigation }) => {
                     justifyContent: 'center'
                 }}
             >
-                {dummyData.newSeason.map((item,index) => {
+                {newmovies.map((item,index) => {
 
                     const opacity = dotPosition.interpolate({
                         inputRange: [index - 1, index, index + 1],
@@ -251,7 +288,7 @@ const Home = ({ navigation }) => {
                     contentContainerStyle={{
                         marginTop: SIZES.padding
                     }}
-                    data={dummyData.continueWatching}
+                    data={movies}
                     keyExtractor={item => `${item.id}`}
                     renderItem={({item,index}) => {
                         return (
@@ -263,11 +300,11 @@ const Home = ({ navigation }) => {
                                 <View
                                     style={{
                                         marginLeft: index == 0 ? SIZES.padding : 20,
-                                        marginRight: index == dummyData.continueWatching.length - 1 ? SIZES.padding : 0
+                                        marginRight: index == movies.length - 1 ? SIZES.padding : 0
                                     }}
                                 >
                                     <Image
-                                        source={item.thumbnail}
+                                        source={{uri: item.large_cover_image}}
                                         resizeMode="cover"
                                         style={{
                                             width: SIZES.width / 3,
@@ -277,12 +314,15 @@ const Home = ({ navigation }) => {
                                     />
                                     <Text
                                         style={{
+                                            flex: 1,
                                             marginTop: SIZES.base,
                                             color: COLORS.white,
+                                            flexWrap: 'wrap',
+                                            width: SIZES.width / 3,
                                             ...FONTS.h4
                                         }}
                                     >
-                                        {item.name}
+                                        {item.title}
                                     </Text>
                                 </View>
                             </TouchableWithoutFeedback>

@@ -22,7 +22,9 @@
     "react-native-reanimated": "^2.0.0",
     "react-native-safe-area-context": "^3.2.0",
     "react-native-screens": "^2.18.1",
-    "react-native-torrent-streamer": "^0.2.3"
+    "react-native-torrent-streamer": "^0.2.3",
+    "react-native-webview": "^11.6.5",
+    "thepiratebay-react-native": "^1.0.0"
   },
   "devDependencies": {
     "@babel/core": "7.13.10",

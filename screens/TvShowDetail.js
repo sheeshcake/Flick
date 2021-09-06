@@ -11,7 +11,8 @@ import {
     FlatList,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    BackHandler
+    BackHandler,
+    Picker
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { ProgressBar } from '../components'
@@ -20,9 +21,9 @@ import TorrentStreamer from 'react-native-torrent-streamer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-const MovieDetail = ({navigation, route}) => {
+const TvShowDetail = ({navigation, route}) => {
 
-    const [selectedMovie, setSelectedMovie] = React.useState(null)
+    const [selectedShow, setsSelectedShow] = React.useState(null)
     const [stream, setStream] = React.useState({
         progress: 0,
         buffer: 0,
@@ -31,7 +32,7 @@ const MovieDetail = ({navigation, route}) => {
         status: "Idle",
         file: "none"
     })
-    const [suggestion, setSuggestion] = React.useState([])
+    const [season, setSeason] = React.useState("1")
     const [isplaying, setIsPlaying] = React.useState(false)
 
     React.useEffect(async () => {
@@ -49,17 +50,20 @@ const MovieDetail = ({navigation, route}) => {
 
 
     async function getMovieData(){
-        await fetch('https://yts.mx/api/v2/movie_details.json?movie_id=' + route.params.selectedMovie.id)
-        .then(response => response.json() )
-        .then(data => {
-            setSelectedMovie(data.data.movie)
-        })
-        .catch(error => console.log(error));
+        console.log(route.params.selectedMovie)
+        await fetch('https://oneom.is/serial/' + route.params.selectedMovie, {headers: {
+            'Accept': 'application/json'}})
+            .then(response => response.json() )
+            .then(data => {
+                setsSelectedShow(data.data)
+                console.log(data.data.serial.ep)
+            })
+            .catch(error => console.log(error));
     }
 
     function createData(){
         try {
-            AsyncStorage.setItem("movie-" + route.params.selectedMovie.id, JSON.stringify(stream))
+            AsyncStorage.setItem("movie-" + route.params.selectedMovie, JSON.stringify(stream))
             console.log("data created!");
         } catch (e) {
             console.log(e)
@@ -68,7 +72,7 @@ const MovieDetail = ({navigation, route}) => {
 
     async function getData(){
         try {
-            const value = await AsyncStorage.getItem("movie-" + route.params.selectedMovie.id)
+            const value = await AsyncStorage.getItem("movie-" + route.params.selectedMovie)
             if(value == null) {
                 createData()
             }else{
@@ -85,12 +89,12 @@ const MovieDetail = ({navigation, route}) => {
         TorrentStreamer.addEventListener('status', onStatus.bind(this))
         TorrentStreamer.addEventListener('ready', onReady.bind(this))
         TorrentStreamer.addEventListener('stop', onStop.bind(this))
-        await fetch('https://yts.mx/api/v2/movie_suggestions.json?movie_id=' + route.params.selectedMovie.id)
-            .then(response => response.json() )
-            .then(data => {
-                setSuggestion(data.data.movies)
-            })
-            .catch(error => console.log(error));
+        // await fetch('https://yts.mx/api/v2/movie_suggestions.json?movie_id=' + route.params.selectedMovie)
+        //     .then(response => response.json() )
+        //     .then(data => {
+        //         setSuggestion(data.data.movies)
+        //     })
+        //     .catch(error => console.log(error));
     }
 
 
@@ -101,7 +105,7 @@ const MovieDetail = ({navigation, route}) => {
     }
 
     function stopMovie() {
-        AsyncStorage.setItem("movie-" + route.params.selectedMovie.id, JSON.stringify(stream))
+        AsyncStorage.setItem("movie-" + route.params.selectedMovie, JSON.stringify(stream))
         if(stream.status == "Downloading"){
             setStream({
                 progress: 0,
@@ -205,13 +209,14 @@ const MovieDetail = ({navigation, route}) => {
     function renderHeaderSection() {
         return (
             <ImageBackground
-                source={{uri: selectedMovie?.background_image_original}}
+                source={{uri: selectedShow?.serial.poster.original}}
                 resizeMode="cover"
                 style={{
                     width: "100%",
                     height: SIZES.height < 700 ? SIZES.height * 0.6 : SIZES.height * 0.7,
                     marginBottom: 100
                 }}
+                blurRadius={10}
             >
                 <View
                     style={{
@@ -251,7 +256,7 @@ const MovieDetail = ({navigation, route}) => {
                                         height: 300,
                                     }}
                                     resizeMode="contain"
-                                    source={{uri: selectedMovie?.large_cover_image}}
+                                    source={{uri: selectedShow?.serial.poster.original}}
                                 />
                                 <Text
                                     style={{
@@ -259,7 +264,9 @@ const MovieDetail = ({navigation, route}) => {
                                         color: COLORS.white,
                                         ...FONTS.h1
                                     }}
-                                >{selectedMovie?.title}</Text>
+                                >
+                                    {selectedShow?.serial.title}
+                                    </Text>
                                 
                             </View>
                         </LinearGradient>
@@ -301,7 +308,9 @@ const MovieDetail = ({navigation, route}) => {
                             color: COLORS.white,
                             ...FONTS.h4
                         }}
-                    >{selectedMovie?.rating}</Text>
+                    >
+                        {selectedShow?.serial.imdb_rating}
+                    </Text>
                 </View>
                 <View
                     style={styles.categoryContainer}
@@ -312,7 +321,7 @@ const MovieDetail = ({navigation, route}) => {
                             ...FONTS.h4
                         }}
                     >
-                        {selectedMovie?.genres.map((item, index) => {return (item + " ")})}
+                        {selectedShow?.serial.genre.map((item, index) => {return (item.name + " ")})}
                     </Text>
                 </View>
             </View>
@@ -342,7 +351,9 @@ const MovieDetail = ({navigation, route}) => {
                             color: COLORS.white,
                             ...FONTS.h3
                         }}
-                    >{selectedMovie?.description_full}</Text>
+                    >
+                        {selectedShow?.serial?.description[0].body.replace(/(<([^>]+)>)/gi, "")}
+                    </Text>
                 </View>
                 <ProgressBar 
                     containerStyle={{
@@ -363,7 +374,7 @@ const MovieDetail = ({navigation, route}) => {
                     <Text
                         style={{flex: 1, color: COLORS.white,...FONTS.h4}}
                     >
-                        Seeds {stream.seeds != 0 ? stream.seeds : selectedMovie?.torrents[0].seeds}
+                        {/* Seeds {stream.seeds != 0 ? stream.seeds : selectedMovie?.torrents[0].seeds} */}
                         </Text>
                     <Text
                         style={{color: COLORS.white,...FONTS.h4}}
@@ -379,7 +390,7 @@ const MovieDetail = ({navigation, route}) => {
                         borderRadius: 15,
                         backgroundColor: COLORS.primary
                     }}
-                    onPress={() => playMovie(selectedMovie?.torrents)}
+                    // onPress={() => playMovie(selectedMovie?.torrents)}
                 >
                             <Text>{
                                             stream.buffer < 100 && stream.buffer > 0 ?
@@ -396,7 +407,7 @@ const MovieDetail = ({navigation, route}) => {
         )
     }
 
-    function renderSuggested(){
+    function renderEpisodes(){
         return (
             <View
                 style={{
@@ -408,67 +419,62 @@ const MovieDetail = ({navigation, route}) => {
                     style={{
                         flexDirection: 'row',
                         paddingHorizontal: SIZES.padding,
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        padding: 5
                     }}
                 >
-                    <Text
+                    <Text style={{color: COLORS.white, marginRight: 20, ...FONTS.h2}}>Season: </Text>
+                    <View
                         style={{
-                            flex: 1,
-                            color: COLORS.white,
-                            ...FONTS.h2
+                            backgroundColor: COLORS.white,
+                            borderRadius: 5
                         }}
-                    >More Like This</Text>
-                    <Image
-                        source={icons.right_arrow}
-                    />
+                    >
+                        <Picker
+                            selectedValue={season}
+                            style={{
+                                height: 50,
+                                width: 200,
+                                backgroundColor: COLORS.primary,
+                                color: COLORS.black,
+                            }}
+                            onValueChange={(itemValue, itemIndex) => setSeason(itemValue)}
+                        >
+                            {selectedShow?.serial?.ep.map((item, index) => {
+                                return(
+                                    item.season != selectedShow?.serial?.ep[index -1]?.season ?
+                                        <Picker.Item style={{color: COLORS.black}} label={item.season} key={item.season} value={item.season} /> 
+                                    : null
+                                )
+                            })}
+                        </Picker>
+                    </View>
                 </View>
-                <FlatList
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{
-                        marginTop: SIZES.padding
+                <View
+                    style={{
+                        marginTop: 20,
+                        borderBottomColor: COLORS.white,
+                        borderWidth: 1,
                     }}
-                    data={suggestion}
-                    keyExtractor={item => `${item.id}`}
-                    renderItem={({item,index}) => {
+                >
+                    {selectedShow?.serial.ep.map((item, index) => {
+                        console.log(item)
                         return (
-                            <TouchableWithoutFeedback
-                                onPress={() => navigation.push("MovieDetail", {
-                                    selectedMovie: item
-                                })}
-                            >
+                            item.season == season ?
                                 <View
                                     style={{
-                                        marginLeft: index == 0 ? SIZES.padding : 20,
-                                        marginRight: index == suggestion.length - 1 ? SIZES.padding : 0
+                                        padding: 20,
+                                        borderWidth: 1,
+                                        borderTopColor: COLORS.white,
                                     }}
                                 >
-                                    <Image
-                                        source={{uri: item.medium_cover_image}}
-                                        resizeMode="cover"
-                                        style={{
-                                            width: SIZES.width / 3,
-                                            height: (SIZES.height / 3) + 60,
-                                            borderRadius: 20
-                                        }}
-                                    />
-                                    <Text
-                                        style={{
-                                            flex: 1,
-                                            marginTop: SIZES.base,
-                                            color: COLORS.white,
-                                            flexWrap: 'wrap',
-                                            width: SIZES.width / 3,
-                                            ...FONTS.h4
-                                        }}
-                                    >
-                                        {item.title}
-                                    </Text>
+                                    <Text style={{color: COLORS.white}}>{item.title}{item.torrent.length == 0 ? "(Comming soon)" : null}</Text>
                                 </View>
-                            </TouchableWithoutFeedback>
+                            :
+                            null
                         )
-                    }}
-                />
+                    })}
+                </View>
             </View>
         )
     }
@@ -495,7 +501,7 @@ const MovieDetail = ({navigation, route}) => {
                 {renderHeaderSection()}
                 {renderCategoryAndRatings()}
                 {renderMovieDetails()}
-                {renderSuggested()}
+                {renderEpisodes()}
             </ScrollView>
         </View>
     )
@@ -515,4 +521,4 @@ const styles = StyleSheet.create({
     }
 })
 
-export default MovieDetail;
+export default TvShowDetail;

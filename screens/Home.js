@@ -15,7 +15,7 @@ import {
     PermissionsAndroid
 } from 'react-native';
 import { dummyData, COLORS, FONTS, SIZES, icons, images } from '../constants'
-import PirateBay from 'thepiratebay'
+// import PirateBay from 'thepiratebay'
 
 const Home = ({ navigation }) => {
 
@@ -47,15 +47,15 @@ const Home = ({ navigation }) => {
     }
 
     async function getData() {
-        PirateBay.search('Game of Thrones', {
-            category: 205
-        })
-        .then(function(results) {
-            console.log(results)
-        })
-        .catch(function(err) {
-            console.log(err)
-        })
+        // PirateBay.search('Game of Thrones', {
+        //     category: 205
+        // })
+        // .then(function(results) {
+        //     console.log(results)
+        // })
+        // .catch(function(err) {
+        //     console.log(err)
+        // })
         await fetch('https://yts.mx/api/v2/list_movies.json?with_rt_ratings=true&limit=5&sort_by=date_added')
             .then(response => response.json() )
             .then(data => {

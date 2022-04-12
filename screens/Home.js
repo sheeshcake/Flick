@@ -509,7 +509,7 @@ const Home = ({ navigation }) => {
                                         width: 100
                                     }}
                                 />
-                                <Text style={{color: COLORS.white}}>alpha v1.1.1</Text>
+                                <Text style={{color: COLORS.white}}>alpha v2.0</Text>
                             </View>
                             <Text
                                 style={{

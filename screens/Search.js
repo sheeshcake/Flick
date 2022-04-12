@@ -39,7 +39,7 @@ const Search = ({navigation, route}) => {
                 setMovies(data?.data?.movies)
             })
             .catch(error => console.log(error));
-        await fetch('https://oneom.is/search/serial?title=' + data, {headers: {
+        await fetch('https://oneom.is/search/serial?title=' + data.replace(' ', '%20'), {headers: {
                 'Accept': 'application/json'}})
                 .then(response => response.json() )
                 .then(data => {

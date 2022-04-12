@@ -12,7 +12,8 @@ import {
     TouchableOpacity,
     TouchableWithoutFeedback,
     BackHandler,
-    Picker
+    Picker,
+    Modal
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { ProgressBar } from '../components'
@@ -34,6 +35,8 @@ const TvShowDetail = ({navigation, route}) => {
     })
     const [season, setSeason] = React.useState("1")
     const [isplaying, setIsPlaying] = React.useState(false)
+    const [modal, setModal] = React.useState(false)
+    const [episodeData, setEpisodeData] = React.useState([]);
 
     React.useEffect(async () => {
         BackHandler.addEventListener('hardwareBackPress', hardwareBackPress);
@@ -50,13 +53,13 @@ const TvShowDetail = ({navigation, route}) => {
 
 
     async function getMovieData(){
-        console.log(route.params.selectedMovie)
+        // console.log(route.params.selectedMovie)
         await fetch('https://oneom.is/serial/' + route.params.selectedMovie, {headers: {
             'Accept': 'application/json'}})
             .then(response => response.json() )
             .then(data => {
                 setsSelectedShow(data.data)
-                console.log(data.data.serial.ep)
+                // console.log(data.data.serial.ep)
             })
             .catch(error => console.log(error));
     }
@@ -64,7 +67,7 @@ const TvShowDetail = ({navigation, route}) => {
     function createData(){
         try {
             AsyncStorage.setItem("movie-" + route.params.selectedMovie, JSON.stringify(stream))
-            console.log("data created!");
+            // console.log("data created!");
         } catch (e) {
             console.log(e)
         }
@@ -355,60 +358,21 @@ const TvShowDetail = ({navigation, route}) => {
                         {selectedShow?.serial?.description[0].body.replace(/(<([^>]+)>)/gi, "")}
                     </Text>
                 </View>
-                <ProgressBar 
-                    containerStyle={{
-                        marginTop: SIZES.radius,
-                    }}
-                    barStyle={{
-                        height: 5,
-                        borderRadius: 3
-                    }}
-                    barPercentage={stream.progress + "%"}
-                />
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        marginBottom: SIZES.radius
-                    }}
-                >
-                    <Text
-                        style={{flex: 1, color: COLORS.white,...FONTS.h4}}
-                    >
-                        {/* Seeds {stream.seeds != 0 ? stream.seeds : selectedMovie?.torrents[0].seeds} */}
-                        </Text>
-                    <Text
-                        style={{color: COLORS.white,...FONTS.h4}}
-                    >{stream?.status + ":" + parseFloat(stream?.progress).toFixed(2) + "%"}{stream.downloadSpeed != 0 ? "(" + (stream.downloadSpeed / 1024).toFixed(2) + "Kbps)" : null}</Text>
-
-                </View>
-                <TouchableOpacity
-                    style={{
-                        height: 60,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: Platform.OS == 'os' ? SIZES.padding * 2 : 0,
-                        borderRadius: 15,
-                        backgroundColor: COLORS.primary
-                    }}
-                    // onPress={() => playMovie(selectedMovie?.torrents)}
-                >
-                            <Text>{
-                                            stream.buffer < 100 && stream.buffer > 0 ?
-                                                "Buffering: " + stream.buffer + "%"
-                                            : stream.buffer == 100 ?
-                                                "Continue Watching"
-                                            : isplaying?
-                                                "Opening Please wait.."
-                                            :
-                                                "Watch Now!"
-                                }</Text>
-                </TouchableOpacity>
             </View>
         )
     }
 
+
+    function GetEpisodeTorrent(data){
+        console.log(data);
+        setModal(!modal)
+        setEpisodeData(data)
+    }
+
+
     function renderEpisodes(){
         return (
+            
             <View
                 style={{
                     marginTop: SIZES.padding,
@@ -438,12 +402,13 @@ const TvShowDetail = ({navigation, route}) => {
                                 backgroundColor: COLORS.primary,
                                 color: COLORS.black,
                             }}
-                            onValueChange={(itemValue, itemIndex) => setSeason(itemValue)}
+                            onValueChange={(itemValue, itemIndex) => {setSeason(itemValue)}}
                         >
                             {selectedShow?.serial?.ep.map((item, index) => {
                                 return(
                                     item.season != selectedShow?.serial?.ep[index -1]?.season ?
-                                        <Picker.Item style={{color: COLORS.black}} label={item.season} key={item.season} value={item.season} /> 
+                                        <Picker.Item style={{color: COLORS.black}}
+                                         label={item.season} key={item.season} value={item.season} /> 
                                     : null
                                 )
                             })}
@@ -458,17 +423,21 @@ const TvShowDetail = ({navigation, route}) => {
                     }}
                 >
                     {selectedShow?.serial.ep.map((item, index) => {
-                        console.log(item)
                         return (
                             item.season == season ?
                                 <View
+                                    key={index}
                                     style={{
                                         padding: 20,
                                         borderWidth: 1,
                                         borderTopColor: COLORS.white,
                                     }}
                                 >
-                                    <Text style={{color: COLORS.white}}>{item.title}{item.torrent.length == 0 ? "(Comming soon)" : null}</Text>
+                                    <TouchableOpacity
+                                        onPress={() => GetEpisodeTorrent(item)}
+                                    >
+                                        <Text style={{color: COLORS.white}}>{item.title}{item.torrent.length == 0 ? "(Comming soon)" : null}</Text>
+                                    </TouchableOpacity>
                                 </View>
                             :
                             null
@@ -476,6 +445,135 @@ const TvShowDetail = ({navigation, route}) => {
                     })}
                 </View>
             </View>
+        )
+    }
+
+
+
+    function renderModal(){
+        return (
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modal}
+                onRequestClose={() => setModal(!modal)}
+                onDismiss={() => setModal(!modal)}
+            >
+                <View
+                    style={{
+                        flex: 1,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        margin: 20,
+                        borderRadius: 20,
+                        padding: 35,
+                        alignItems: "center",
+                        shadowColor: "#000",
+                        backgroundColor: COLORS.black,
+                        shadowOffset: {
+                        width: 0,
+                        height: 2
+                        },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 4,
+                        elevation: 5
+                    }}
+                >
+                    <ScrollView>
+                        <View
+                            style={{
+                                justifyContent:'center',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <Image
+                                source={icons.flick}
+                                style={{
+                                    height: 50,
+                                    width: 100
+                                }}
+                            />
+                            <Text style={{color: COLORS.white}}>alpha v2.0</Text>
+                        </View>
+                        <View>
+                            <ProgressBar 
+                                containerStyle={{
+                                    marginTop: SIZES.radius,
+                                }}
+                                barStyle={{
+                                    height: 5,
+                                    borderRadius: 3
+                                }}
+                                barPercentage={stream.progress + "%"}
+                            />
+                            <View
+                                style={{
+                                    flexDirection: 'row',
+                                    marginBottom: SIZES.radius
+                                }}
+                            >
+                                <Text
+                                    style={{flex: 1, color: COLORS.white,...FONTS.h4}}
+                                >
+                                    {/* Seeds {stream.seeds != 0 ? stream.seeds : selectedMovie?.torrents[0].seeds} */}
+                                    </Text>
+                                <Text
+                                    style={{color: COLORS.white,...FONTS.h4}}
+                                >{stream?.status + ":" + parseFloat(stream?.progress).toFixed(2) + "%"}{stream.downloadSpeed != 0 ? "(" + (stream.downloadSpeed / 1024).toFixed(2) + "Kbps)" : null}</Text>
+
+                            </View>
+                        </View>
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                width: '100%',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            <TouchableOpacity
+                                style={{
+                                    height: 60,
+                                    width: 150,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: Platform.OS == 'os' ? SIZES.padding * 2 : 0,
+                                    borderRadius: 15,
+                                    marginRight: 10,
+                                    backgroundColor: COLORS.primary
+                                }}
+                                // onPress={() => playMovie(selectedMovie?.torrents)}
+                            >
+                                        <Text>{
+                                                        stream.buffer < 100 && stream.buffer > 0 ?
+                                                            "Buffering: " + stream.buffer + "%"
+                                                        : stream.buffer == 100 ?
+                                                            "Continue Watching"
+                                                        : isplaying?
+                                                            "Opening Please wait.."
+                                                        :
+                                                            "Watch Now!"
+                                            }</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{
+                                    height: 60,
+                                    width: 100,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginLeft: 10,
+                                    marginBottom: Platform.OS == 'os' ? SIZES.padding * 2 : 0,
+                                    borderRadius: 15,
+                                    backgroundColor: COLORS.primary
+                                }}
+                                onPress={() => setModal(!modal)}
+                            >
+                                <Text>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+                </View>
+            </Modal>
         )
     }
 
@@ -502,6 +600,7 @@ const TvShowDetail = ({navigation, route}) => {
                 {renderCategoryAndRatings()}
                 {renderMovieDetails()}
                 {renderEpisodes()}
+                {renderModal()}
             </ScrollView>
         </View>
     )

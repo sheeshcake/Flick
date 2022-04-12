@@ -433,6 +433,7 @@ const MovieDetail = ({navigation, route}) => {
                     renderItem={({item,index}) => {
                         return (
                             <TouchableWithoutFeedback
+                                key={index}
                                 onPress={() => navigation.push("MovieDetail", {
                                     selectedMovie: item
                                 })}
